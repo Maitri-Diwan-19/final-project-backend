@@ -1,3 +1,9 @@
 node_modules
 package-lock.json
 dist
+husky
+build
+generated
+/generated/prisma
+prisma/migrations
+package-lock.json

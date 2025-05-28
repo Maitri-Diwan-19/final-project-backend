@@ -4,5 +4,5 @@ import app from './app.js';
 const port = config.PORT || 2000;
 
 app.listen(port, () => {
-  console.log(`Listening from port: ${port}`);
+  console.log(`server is running on: http://localhost:${port}`);
 });
