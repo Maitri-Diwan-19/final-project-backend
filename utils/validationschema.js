@@ -1,41 +1,77 @@
-import * as yup from 'yup';
+import Joi from 'joi';
 
-export const registrationSchema = yup.object().shape({
-  username: yup.string().required('Username is required'),
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup
-    .string()
-    .required('Password is required')
-    .min(6, 'Password must be at least 6 characters')
-    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .matches(/\d/, 'Password must contain at least one number')
-    .matches(/[\W_]/, 'Password must contain at least one special character'),
-  confirmPassword: yup
-    .string()
-    .required('Confirm password is required')
-    .oneOf([yup.ref('password')], 'Passwords must match'),
+export const registrationSchema = Joi.object({
+  username: Joi.string().required().messages({
+    'any.required': 'Username is required',
+  }),
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .pattern(/@gmail\.com$/, 'gmail domain')
+    .required()
+    .messages({
+      'string.email': 'Invalid email',
+      'string.pattern.name': 'Only Gmail emails are allowed',
+      'any.required': 'Email is required',
+    }),
+
+  password: Joi.string()
+    .min(6)
+    .pattern(/[a-z]/, 'lowercase')
+    .pattern(/[A-Z]/, 'uppercase')
+    .pattern(/\d/, 'number')
+    .pattern(/[\W_]/, 'special')
+    .required()
+    .messages({
+      'string.min': 'Password must be at least 6 characters',
+      'string.pattern.name': 'Password must include {#name} character',
+      'any.required': 'Password is required',
+    }),
+  confirmPassword: Joi.any().valid(Joi.ref('password')).required().messages({
+    'any.only': 'Passwords must match',
+    'any.required': 'Confirm password is required',
+  }),
 });
 
-export const loginSchema = yup.object().shape({
-  email: yup.string().email('Invalid email').required('Email is required'),
-  password: yup.string().required('Password is required'),
-});
-export const activationSchema = yup.object().shape({
-  token: yup.string().required('Activation token is required'),
+export const loginSchema = Joi.object({
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .required()
+    .messages({
+      'string.email': 'Invalid email',
+      'any.required': 'Email is required',
+    }),
+  password: Joi.string().required().messages({
+    'any.required': 'Password is required',
+  }),
 });
 
-export const forgotPasswordSchema = yup.object({
-  email: yup.string().email().required('Email is required'),
+export const activationSchema = Joi.object({
+  token: Joi.string().required().messages({
+    'any.required': 'Activation token is required',
+  }),
 });
 
-export const resetPasswordSchema = yup.object({
-  password: yup
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .matches(/[A-Z]/, 'Must include an uppercase letter')
-    .matches(/[a-z]/, 'Must include a lowercase letter')
-    .matches(/\d/, 'Must include a number')
-    .matches(/[^A-Za-z0-9]/, 'Must include a special character')
-    .required('Password is required'),
+export const forgotPasswordSchema = Joi.object({
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .required()
+    .messages({
+      'string.email': 'Invalid email',
+      'any.required': 'Email is required',
+    }),
+});
+
+export const resetPasswordSchema = Joi.object({
+  password: Joi.string()
+    .min(8)
+    .pattern(/[A-Z]/, 'uppercase')
+    .pattern(/[a-z]/, 'lowercase')
+    .pattern(/\d/, 'number')
+    .pattern(/[^A-Za-z0-9]/, 'special')
+    .required()
+    .messages({
+      'string.min': 'Password must be at least 8 characters',
+      'string.pattern.name': 'Must include a {#name} character',
+      'any.required': 'Password is required',
+    }),
 });

@@ -6,7 +6,9 @@ import {
   logout,
   forgotPassword,
   resetPassword,
+  getMe,
 } from '../controllers/authcontroller.js';
+import authenticate from '../middleware/authenticate.js';
 
 const router = express.Router();
 
@@ -22,6 +24,7 @@ router.post('/activate', activate);
 // @desc    Login user and send access token + set refresh token cookie
 router.post('/login', login);
 
+router.get('/me', authenticate, getMe);
 // @route   POST /api/auth/logout
 // @desc    Logout user and clear refresh token
 router.post('/logout', logout);

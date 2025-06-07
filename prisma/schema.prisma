@@ -19,18 +19,116 @@ model User {
   username    String    @unique
   email       String    @unique
   password    String
+  bio String? 
+  avatarUrl       String?
   isActive  Boolean  @default(false) 
   resetToken  String?  
+  activationToken String? 
   createdAt  DateTime   @default(now())
-  tokens   Token[]         
+  tokens   Token[]     @relation("UserTokens")
+  posts           Post[]    @relation("UserPosts")
+ 
+  likes           Like[]
+  savedPosts      SavePost[]
+  comments        Comment[]
+  sentMessages    Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  chats           Chat[]    @relation("ChatParticipants")
+  followers       Follow[]  @relation("UserFollowers")
+  following       Follow[]  @relation("UserFollowing")      
 }
 
 
 model Token {
   id        String   @id @default(uuid())
   token     String   @unique
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation("UserTokens", fields: [userId], references: [id])
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model Post {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+ user      User     @relation("UserPosts", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  media     Media[]
+  likes     Like[]
+  savedBy   SavePost[]
+  comments  Comment[]
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, postId])
+}
+
+model SavePost {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, postId])
+}
+
+model Media {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url       String
+  type      String   // e.g., "image"
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Chat {
+  id           String   @id @default(uuid())
+  participants User[]   @relation("ChatParticipants")
+  messages     Message[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  receiverId String
+  chatId     String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  @@unique([followerId, followingId])
+}
+
+

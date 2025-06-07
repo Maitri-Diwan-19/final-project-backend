@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (to, subject, verificationLink) => {
   try {
     const mailOptions = {
-      from: process.env.EMAIL_FROM,
+      from: `"SocioFeed"<${process.env.EMAIL_FROM}>`,
       to,
       subject,
       html: `
@@ -43,6 +43,7 @@ export const sendEmail = async (to, subject, verificationLink) => {
 
 export const sendResetPasswordEmail = async (to, subject, token) => {
   const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
+  console.log('my reset url:', resetLink);
   try {
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,
