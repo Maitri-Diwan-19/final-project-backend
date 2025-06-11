@@ -7,27 +7,18 @@ import {
   forgotPassword,
   resetPassword,
   getMe,
+  refreshToken,
 } from '../controllers/authcontroller.js';
 import authenticate from '../middleware/authenticate.js';
 
 const router = express.Router();
 
-// @route   POST /api/auth/register
-// @desc    Register a new user
 router.post('/register', register);
-
-// @route   POST /api/auth/activate
-// @desc    Activate user account via token
 router.post('/activate', activate);
-
-// @route   POST /api/auth/login
-// @desc    Login user and send access token + set refresh token cookie
 router.post('/login', login);
-
 router.get('/me', authenticate, getMe);
-// @route   POST /api/auth/logout
-// @desc    Logout user and clear refresh token
 router.post('/logout', logout);
+router.post('/refresh-token', refreshToken);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 

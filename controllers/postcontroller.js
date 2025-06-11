@@ -142,6 +142,24 @@ export const savePost = async (req, res) => {
   }
 };
 
+export const unsavePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.id;
+
+    const result = await postService.unsavePostService(userId, postId);
+
+    res.status(200).json({ message: 'Post unsaved', result });
+  } catch (error) {
+    if (error.message === 'Post was not saved by user') {
+      return res.status(404).json({ error: error.message });
+    }
+
+    console.error('Unsave post error:', error);
+    res.status(500).json({ error: 'Failed to unsave post' });
+  }
+};
+
 export const getSavedPosts = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -193,5 +211,16 @@ export const uploadMedia = async (req, res) => {
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Upload failed' });
+  }
+};
+
+export const getPostsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const posts = await postService.getPostsByUserService(userId);
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error('Error fetching user posts:', error);
+    res.status(500).json({ error: 'Failed to fetch user posts.' });
   }
 };

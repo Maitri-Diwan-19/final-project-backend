@@ -49,6 +49,40 @@ export const createPostService = async (userId, content, files) => {
   return newPost;
 };
 
+export const getPostByIdService = async (postId) => {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    include: {
+      user: {
+        select: { id: true, username: true, avatarUrl: true },
+      },
+      media: true,
+      likes: {
+        include: {
+          user: {
+            select: { id: true, username: true, avatarUrl: true },
+          },
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+      comments: {
+        include: {
+          user: {
+            select: { id: true, username: true, avatarUrl: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  });
+
+  return post;
+};
 export const addCommentService = async (userId, postId, content) => {
   if (!content) throw new Error('Comment content is required.');
 
@@ -193,6 +227,20 @@ export const savePostService = async (userId, postId) => {
   return save;
 };
 
+export const unsavePostService = async (userId, postId) => {
+  const existingSave = await prisma.savePost.findFirst({
+    where: { userId, postId },
+  });
+
+  if (!existingSave) {
+    throw new Error('Post was not saved by user');
+  }
+
+  return await prisma.savePost.deleteMany({
+    where: { userId, postId },
+  });
+};
+
 export const getSavedPostsService = async (userId) => {
   const saved = await prisma.savePost.findMany({
     where: { userId },
@@ -207,7 +255,13 @@ export const getSavedPostsService = async (userId) => {
       },
     },
   });
-  return saved.map((s) => s.post);
+  return saved.map((s) => ({
+    ...s.post,
+    id: s.post.id,
+    isSaved: true,
+    likesCount: s.post.likes.length,
+    commentsCount: s.post.comments.length,
+  }));
 };
 
 export const getUserProfileService = async (username) => {
@@ -286,5 +340,38 @@ export const uploadMediaService = (fileBuffer) => {
       }
     );
     streamifier.createReadStream(fileBuffer).pipe(stream);
+  });
+};
+
+export const getPostsByUserService = async (userId) => {
+  return await prisma.post.findMany({
+    where: {
+      userId: userId,
+    },
+    include: {
+      media: true,
+      comments: true,
+      likes: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
   });
 };

@@ -6,6 +6,7 @@ import {
   initiatePasswordReset,
   resetUserPassword,
   logoutUser,
+  refreshAccessToken,
 } from '../services/authservice.js';
 
 import {
@@ -125,10 +126,43 @@ export const logout = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
     if (refreshToken) {
       await logoutUser(refreshToken);
-      res.clearCookie('refreshToken');
     }
+    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken');
     res.json({ message: 'Logged out successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Logout failed' });
+  }
+};
+export const refreshToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ error: 'No refresh token provided' });
+    }
+
+    const result = await refreshAccessToken(refreshToken);
+
+    if (result.error) {
+      // Clear invalid refresh token
+      res.clearCookie('refreshToken');
+      return res.status(401).json({ error: result.error });
+    }
+
+    const { accessToken, user } = result;
+
+    // Set new access token in cookie
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.json({ message: 'Token refreshed successfully', user });
+  } catch (err) {
+    res.clearCookie('refreshToken');
+    res.status(401).json({ error: 'Invalid refresh token' });
   }
 };

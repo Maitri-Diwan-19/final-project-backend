@@ -83,10 +83,14 @@ export const initiatePasswordReset = async (email) => {
     data: { resetToken },
   });
 
-  const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-  const emailSent = await sendResetPasswordEmail(email, 'Reset Your SocioFeed Password', resetLink);
+  // const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+  const emailSent = await sendResetPasswordEmail(
+    email,
+    'Reset Your SocioFeed Password',
+    resetToken
+  );
 
-  return { emailSent, resetLink };
+  return { emailSent };
 };
 
 export const resetUserPassword = async (token, newPassword) => {
@@ -109,4 +113,38 @@ export const resetUserPassword = async (token, newPassword) => {
 
 export const logoutUser = async (refreshToken) => {
   await prisma.token.deleteMany({ where: { token: refreshToken } });
+};
+
+export const refreshAccessToken = async (refreshToken) => {
+  try {
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+
+    // Check if refresh token exists in database
+    const tokenRecord = await prisma.token.findFirst({
+      where: {
+        token: refreshToken,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+
+    if (!tokenRecord) {
+      return { error: 'Invalid or expired refresh token' };
+    }
+
+    // Generate new access token
+    const { accessToken } = generateTokens(tokenRecord.userId);
+
+    return {
+      accessToken,
+      user: {
+        id: tokenRecord.user.id,
+        username: tokenRecord.user.username,
+        email: tokenRecord.user.email,
+      },
+    };
+  } catch (error) {
+    return { error: 'Invalid refresh token' };
+  }
 };

@@ -96,14 +96,31 @@ export const getFollowingList = async (userId) => {
 };
 
 export const searchUsersByQuery = async (query) => {
-  return prisma.user.findMany({
+  const startWith = await prisma.user.findMany({
     where: {
       OR: [
-        { username: { contains: query, mode: 'insensitive' } },
-        { bio: { contains: query, mode: 'insensitive' } },
+        { username: { startsWith: query, mode: 'insensitive' } },
+        { bio: { startsWith: query, mode: 'insensitive' } },
       ],
     },
     select: { id: true, username: true, avatarUrl: true },
     take: 10,
   });
+
+  const containsResults = await prisma.user.findMany({
+    where: {
+      OR: [
+        { username: { contains: query, mode: 'insensitive' } },
+        { bio: { contains: query, mode: 'insensitive' } },
+      ],
+      NOT: {
+        id: { in: startWith.map((user) => user.id) },
+      },
+    },
+    select: { id: true, username: true, avatarUrl: true },
+    take: 10,
+  });
+
+  const combined = [...startWith, ...containsResults].slice(0, 10);
+  return combined;
 };
